@@ -71,6 +71,9 @@ def default_config() -> CN:
     # This is for the "local variable" use pattern
     return _C.clone()
 
+def dataset_eval_to_get_mask_config() -> CN:
+    return dataset_config('datasets_tar_eval_to_get_mask.yaml')    
+
 def dataset_config(name='datasets_tar.yaml') -> CN:
     """
     Get dataset config file

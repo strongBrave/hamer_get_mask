@@ -5,6 +5,7 @@ https://github.com/mkocabas/EpipolarPose/blob/master/lib/utils/img_utils.py
 import torch
 import numpy as np
 from skimage.transform import rotate, resize
+from typing import Union
 from skimage.filters import gaussian
 import random
 import cv2
@@ -488,7 +489,7 @@ def mano_param_processing(mano_params: Dict, has_mano_params: Dict, rot: float, 
 
 
 
-def get_example(img_path: str|np.ndarray, center_x: float, center_y: float,
+def get_example(img_path: Union[str, np.ndarray], center_x: float, center_y: float,
                 width: float, height: float,
                 keypoints_2d: np.array, keypoints_3d: np.array,
                 mano_params: Dict, has_mano_params: Dict,

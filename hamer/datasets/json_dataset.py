@@ -12,10 +12,11 @@ import cv2
 from .dataset import Dataset
 from .utils import get_example, expand_to_aspect_ratio
 from .smplh_prob_filter import poses_check_probable, load_amass_hist_smooth
+from typing import Union
 
 def expand(s):
     return os.path.expanduser(os.path.expandvars(s))
-def expand_urls(urls: str|List[str]):
+def expand_urls(urls: Union[str, List[str]]):
     if isinstance(urls, str):
         urls = [urls]
     urls = [u for url in urls for u in braceexpand.braceexpand(expand(url))]

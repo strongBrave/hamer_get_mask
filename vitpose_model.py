@@ -5,6 +5,7 @@ import os
 import numpy as np
 import torch
 import torch.nn as nn
+from typing import Union
 
 from mmpose.apis import inference_top_down_pose_model, init_pose_model, process_mmdet_results, vis_pose_result
 
@@ -22,7 +23,7 @@ class ViTPoseModel(object):
         },
     }
 
-    def __init__(self, device: str | torch.device):
+    def __init__(self, device: Union[str, torch.device]): 
         self.device = torch.device(device)
         self.model_name = 'ViTPose+-G (multi-task train, COCO)'
         self.model = self._load_model(self.model_name)
