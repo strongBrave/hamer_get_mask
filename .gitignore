@@ -153,3 +153,5 @@ dmypy.json
 
 *.zip
 hand_mask/
+_DATA/
+hamer_training_data/
