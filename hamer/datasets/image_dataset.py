@@ -416,6 +416,7 @@ class ImageDataset(Dataset):
         item = {}
 
         item['img'] = img_patch
+        item['image_orig'] = image.copy()
         item['mask'] = mask_patch
         # item['img_og'] = image
         # item['mask_og'] = mask
@@ -425,6 +426,7 @@ class ImageDataset(Dataset):
         item['box_center'] = center.copy()
         item['box_size'] = bbox_size
         item['img_size'] = 1.0 * img_size[::-1].copy()
+        item['img_size_orig'] = 1.0 * np.array([image.shape[1], image.shape[0]])
         item['mano_params'] = mano_params
         item['has_mano_params'] = has_mano_params
         item['mano_params_is_axis_angle'] = mano_params_is_axis_angle

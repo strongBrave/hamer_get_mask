@@ -41,7 +41,7 @@ def preprocess(batch, out, model_cfg):
     pred_cam[:,1] = multiplier*pred_cam[:,1]
     box_center = batch["box_center"].float()
     box_size = batch["box_size"].float()
-    img_size = torch.tensor([256, 256], device=pred_cam.device, dtype=pred_cam.dtype).unsqueeze(0).repeat(B, 1)
+    img_size = batch['img_size_orig'].float()
     multiplier = (2*batch['right']-1)
     scaled_focal_length = model_cfg.EXTRA.FOCAL_LENGTH / model_cfg.MODEL.IMAGE_SIZE * img_size.max()
     pred_cam_t_full = cam_crop_to_full(pred_cam, box_center, box_size, img_size, scaled_focal_length).detach().cpu().numpy()    
@@ -59,9 +59,8 @@ def render_mask(renderer, scaled_focal_length, vertices, cam_t, img_size, is_rig
     # 根据阈值创建二值 mask（透明区域为 0，非透明区域为 1）
     mask = (alpha_channel > 0.5).astype(np.uint8) * 255  # 大于阈值为 1，否则为 0
 
-    cv2.imwrite(f'mask.png', mask)
-
     return mask
+
 class MixedWebDataset(wds.WebDataset):
     def __init__(self, cfg: CfgNode, dataset_cfg: CfgNode, train: bool = False) -> None:
         super(wds.WebDataset, self).__init__()
@@ -106,78 +105,70 @@ def main():
     for dataset in args.dataset.split(','):
         dataset_cfg = dataset_eval_to_get_mask_config()[dataset]
         args.dataset = dataset
-        run_eval(model, model_cfg, dataset_cfg, device, args, renderer)
+        save_dir = "hand_mask"
+        os.makedirs(save_dir, exist_ok=True)
+        save_dir = os.path.join(save_dir, f"{dataset.split('-')[0]}")
+        os.makedirs(save_dir, exist_ok=True)
+        run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir)
 
-def run_eval(model, model_cfg, dataset_cfg, device, args, renderer):
-
-    # # List of metrics to log
-    # if args.dataset in ['FREIHAND-VAL', 'HO3D-VAL']:
-    #     metrics = None
-    #     preds = ['vertices', 'keypoints_3d']
-    #     pck_thresholds = None
-    #     rescale_factor = -1
-    # elif args.dataset in ['NEWDAYS-TEST-ALL', 'NEWDAYS-TEST-VIS', 'NEWDAYS-TEST-OCC',
-    #                       'EPICK-TEST-ALL', 'EPICK-TEST-VIS', 'EPICK-TEST-OCC',
-    #                       'EGO4D-TEST-ALL', 'EGO4D-TEST-VIS', 'EGO4D-TEST-OCC']:
-    #     metrics = ['mode_kpl2']
-    #     preds = None
-    #     pck_thresholds = [0.05, 0.1, 0.15]
-    #     rescale_factor = 2
+def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
 
     # Create dataset and data loader
     dataset = MixedWebDataset(model_cfg, dataset_cfg, train=False)
     dataloader = torch.utils.data.DataLoader(dataset, args.batch_size, shuffle=args.shuffle, num_workers=args.num_workers)
 
-    # Setup evaluator object
-    # evaluator = Evaluator(
-    #     dataset_length=dataset.__len__(),
-    #     dataset=args.dataset,
-    #     keypoint_list=dataset_cfg.KEYPOINT_LIST, 
-    #     pelvis_ind=model_cfg.EXTRA.PELVIS_IND, 
-    #     metrics=metrics,
-    #     preds=preds,
-    #     pck_thresholds=pck_thresholds,
-    # )
-    save_dir = "frei-hand"
-    os.makedirs(save_dir, exist_ok=True)
-
     # Go over the images in the dataset.
     for i, batch in enumerate(tqdm(dataloader)):
         batch = recursive_to(batch, device)
       
-        with torch.no_grad():
+        with torch.no_grad():      
             out = model(batch)
-        # evaluator(out, batch)
-    #     if i % args.log_freq == args.log_freq - 1:
-    #         evaluator.log()
-    # evaluator.log()
-    # error = None
+
             batch_size = batch['img'].shape[0]
             pred_cam_t_full, scaled_focal_length = preprocess(batch, out, model_cfg)
             for n in range(batch_size):
-                import ipdb; ipdb.set_trace()
                 img_name = batch['imgname'][n]
-                img = batch['img'][n].clone().detach().cpu().numpy()
-                img = tensor_to_image(img)
-                img = img[:, :, ::-1]
-                save_path = os.path.join(save_dir, f'test_{n}.png')
-                cv2.imwrite(f"img.png", img)
+                img_idx = img_name.split('/')[-1]
 
-                regression_img = renderer(out['pred_vertices'][n].detach().cpu().numpy(),
-                                        out['pred_cam_t'][n].detach().cpu().numpy(),
-                                        batch['img'][n],
-                                        mesh_base_color=LIGHT_BLUE,
-                                        scene_bg_color=(1, 1, 1),
-                                        )
-                cv2.imwrite(f'regression_img.png', 255*regression_img[:, :, ::-1])                
-                
+                # Save image processed by func 'get_example()'
+                # img = batch['img'][n].clone().detach().cpu().numpy()
+                # img = tensor_to_image(img)
+                # img = img[:, :, ::-1]
+                # tmp_save_path = os.path.join(save_dir, f'{img_idx}-img.png')
+                # cv2.imwrite(tmp_save_path, img)
+
+                # Save original image
+                image_orig = batch['image_orig'][n].cpu().numpy()
+                image_orig = image_orig[:, :, ::-1]
+                tmp_save_path = os.path.join(save_dir, f'{img_idx}-image_orig.png')
+                cv2.imwrite(tmp_save_path, image_orig)
+
+                # Save regression rendered image
+                # tmp_save_path = os.path.join(save_dir, f'{img_idx}-regression_img.png')
+                # regression_img = renderer(out['pred_vertices'][n].detach().cpu().numpy(),
+                #                         out['pred_cam_t'][n].detach().cpu().numpy(),
+                #                         batch['img'][n],
+                #                         mesh_base_color=LIGHT_BLUE,
+                #                         scene_bg_color=(1, 1, 1),
+                #                         )
+                # cv2.imwrite(tmp_save_path, 255*regression_img[:, :, ::-1])                
+
+                # Save mask
                 verts = out['pred_vertices'][n].detach().cpu().numpy()
                 is_right = batch['right'][n].cpu().numpy()
                 verts[:,0] = (2*is_right-1)*verts[:,0]
                 cam_t = pred_cam_t_full[n]
-                img_size = np.array([256, 256])
+                img_size = batch['img_size_orig'][n].cpu().numpy()
 
-                render_mask(renderer, scaled_focal_length, verts, cam_t, img_size, is_right)
+                mask = render_mask(renderer, scaled_focal_length, verts, cam_t, img_size, is_right)
+                save_path = os.path.join(save_dir, f'{img_idx}-mask.png')
+                cv2.imwrite(save_path, mask)
+
+                # Save the mask on the image image
+                mask_3_channel = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+                masked_image = cv2.bitwise_and(image_orig, mask_3_channel)
+                final_save_path = os.path.join(save_dir, f'{img_idx}-masked_on_img.png')
+                cv2.imwrite(final_save_path, masked_image)
 
 
 if __name__ == '__main__':
