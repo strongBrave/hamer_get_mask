@@ -138,10 +138,10 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
                 # cv2.imwrite(tmp_save_path, img)
 
                 # Save original image
-                image_orig = batch['image_orig'][n].cpu().numpy()
-                image_orig = image_orig[:, :, ::-1]
-                tmp_save_path = os.path.join(save_dir, f'{img_idx}-image_orig.png')
-                cv2.imwrite(tmp_save_path, image_orig)
+                # image_orig = batch['image_orig'][n].cpu().numpy()
+                # image_orig = image_orig[:, :, ::-1]
+                # tmp_save_path = os.path.join(save_dir, f'{img_idx}-image_orig.png')
+                # cv2.imwrite(tmp_save_path, image_orig)
 
                 # Save regression rendered image
                 # tmp_save_path = os.path.join(save_dir, f'{img_idx}-regression_img.png')
@@ -165,10 +165,10 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
                 cv2.imwrite(save_path, mask)
 
                 # Save the mask on the image image
-                mask_3_channel = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-                masked_image = cv2.bitwise_and(image_orig, mask_3_channel)
-                final_save_path = os.path.join(save_dir, f'{img_idx}-masked_on_img.png')
-                cv2.imwrite(final_save_path, masked_image)
+                # mask_3_channel = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+                # masked_image = cv2.bitwise_and(image_orig, mask_3_channel)
+                # final_save_path = os.path.join(save_dir, f'{img_idx}-masked_on_img.png')
+                # cv2.imwrite(final_save_path, masked_image)
 
 
 if __name__ == '__main__':
