@@ -42,7 +42,7 @@ obj_path has no shape
 trans (3,)
 """
 
-MODE = 'train' # ['train', 'test', 'val]  
+MODE = 'test' # ['train', 'test', 'val]  
 obman_root = "/home/yujunhao/data/yujunhao/dataset/obman"
 shapenet_root = "/home/yujunhao/data/yujunhao/projects/obman/datasymlinks/ShapeNetCore.v2"
 obman_root = os.path.join(obman_root, MODE)
@@ -129,7 +129,9 @@ if __name__ == "__main__":
         meta_path = sample['meta_path']
         with open(meta_path, "rb") as f:
             meta_info = pickle.load(f)
-        meta_info['hand_pose_from pca'] = hand_poses_full
+        if 'hand_pose_from pca' in meta_info:
+            del meta_info['hand_pose_from pca']
+        meta_info['hand_pose_from_pca'] = hand_poses_full
         with open(meta_path, "wb") as f:
             pickle.dump(meta_info, f)
         return sample_idx
