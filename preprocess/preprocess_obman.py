@@ -42,10 +42,10 @@ obj_path has no shape
 trans (3,)
 """
 
-#  
+MODE = 'train' # ['train', 'test', 'val]  
 obman_root = "/home/yujunhao/data/yujunhao/dataset/obman"
 shapenet_root = "/home/yujunhao/data/yujunhao/projects/obman/datasymlinks/ShapeNetCore.v2"
-obman_root = os.path.join(obman_root, "train")
+obman_root = os.path.join(obman_root, MODE)
 rgb_folder = os.path.join(obman_root, "rgb")
 segm_folder = os.path.join(obman_root, "segm")
 meta_folder = os.path.join(obman_root, "meta")
