@@ -205,14 +205,16 @@ class ImageDataset(Dataset):
         def split_data(source):
             for item in source:
                 datas = item['data.pyd']
-                for data in datas:
+                for i, data in enumerate(datas):
                     if 'detection.npz' in item:
                         det_idx = data['extra_info']['detection_npz_idx']
                         mask = item['detection.npz']['masks'][det_idx]
                     else:
                         mask = np.ones_like(item['jpg'][:,:,0], dtype=bool)
+                    
+                    key = f"{item['__key__']}_{i}"
                     yield {
-                        '__key__': item['__key__'],
+                        '__key__': key,
                         'jpg': item['jpg'],
                         'data.pyd': data,
                         'mask': mask,
