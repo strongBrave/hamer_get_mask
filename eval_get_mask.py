@@ -105,7 +105,9 @@ def main():
     for dataset in args.dataset.split(','):
         dataset_cfg = dataset_eval_to_get_mask_config()[dataset]
         args.dataset = dataset
-        save_dir = "hand_mask"
+        save_dir = "hamer_proprocess_data"
+        os.makedirs(save_dir, exist_ok=True)
+        save_dir = os.path.join(save_dir, "hand_mask")
         os.makedirs(save_dir, exist_ok=True)
         save_dir = os.path.join(save_dir, f"{dataset}")
         os.makedirs(save_dir, exist_ok=True)
