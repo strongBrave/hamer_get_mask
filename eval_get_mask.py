@@ -114,13 +114,12 @@ def main():
 def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
 
     # Create dataset and data loader
-    dataset = MixedWebDataset(model_cfg, dataset_cfg, train=False)
+    dataset = create_webdataset(model_cfg, dataset_cfg, train=False)
     dataloader = torch.utils.data.DataLoader(dataset, args.batch_size, shuffle=args.shuffle, num_workers=args.num_workers)
 
     # Go over the images in the dataset.
     for i, batch in enumerate(tqdm(dataloader)):
-        batch = recursive_to(batch, device)
-      
+        batch = recursive_to(batch, device)  
         with torch.no_grad():      
             out = model(batch)
 

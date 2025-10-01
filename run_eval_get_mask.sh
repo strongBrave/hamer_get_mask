@@ -1,0 +1,1 @@
+python eval_get_mask.py --dataset COCOW-TRAIN --batch_size 1
