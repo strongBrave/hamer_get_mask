@@ -107,9 +107,9 @@ def main():
         args.dataset = dataset
         save_dir = "hamer_proprocess_data"
         os.makedirs(save_dir, exist_ok=True)
-        save_dir = os.path.join(save_dir, "hand_mask")
-        os.makedirs(save_dir, exist_ok=True)
         save_dir = os.path.join(save_dir, f"{dataset}")
+        os.makedirs(save_dir, exist_ok=True)        
+        save_dir = os.path.join(save_dir, "mask")
         os.makedirs(save_dir, exist_ok=True)
         run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir)
 
@@ -162,7 +162,7 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
                 img_size = batch['img_size_orig'][n].cpu().numpy()
 
                 mask = render_mask(renderer, scaled_focal_length, verts, cam_t, img_size, is_right)
-                save_path = os.path.join(save_dir, f'{img_idx}-mask.png')
+                save_path = os.path.join(save_dir, f'{img_idx}.png')
                 cv2.imwrite(save_path, mask)
 
                 # Save the mask on the image image

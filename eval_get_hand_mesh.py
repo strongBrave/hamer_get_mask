@@ -108,9 +108,9 @@ def main():
         args.dataset = dataset
         save_dir = "hamer_proprocess_data"
         os.makedirs(save_dir, exist_ok=True)
-        save_dir = os.path.join(save_dir, "hand_mesh")
+        save_dir = os.path.join(save_dir, f"{dataset}")
         os.makedirs(save_dir, exist_ok=True)
-        save_dir = os.path.join(save_dir, f"{dataset.split('-')[0]}")
+        save_dir = os.path.join(save_dir, "mesh")
         os.makedirs(save_dir, exist_ok=True)
         run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir)
 
@@ -137,7 +137,7 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
                 is_right = batch['right'][n].cpu().numpy()
                 hand_mesh = renderer.vertices_to_trimesh(verts, CAMERA_TRANSLATION, LIGHT_BLUE, is_right=is_right) # pyrender
                 
-                hand_mesh.export(os.path.join(save_dir, f'{img_idx}-hand.obj'))
+                hand_mesh.export(os.path.join(save_dir, f'{img_idx}.obj'))
                
 
 
