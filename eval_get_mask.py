@@ -107,7 +107,7 @@ def main():
         args.dataset = dataset
         save_dir = "hand_mask"
         os.makedirs(save_dir, exist_ok=True)
-        save_dir = os.path.join(save_dir, f"{dataset.split('-')[0]}")
+        save_dir = os.path.join(save_dir, f"{dataset}")
         os.makedirs(save_dir, exist_ok=True)
         run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir)
 
