@@ -1,0 +1,5 @@
+{
+  "include": ["hamer", "third_party"],
+  "exclude": ["example_data", "hamer_training_data", "hand_mask", "hand_mesh", "assets", "docker", "_DATA"],
+  "typeCheckingMode": "off",
+}
