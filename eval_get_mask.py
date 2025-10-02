@@ -130,6 +130,9 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
             for n in range(batch_size):
                 img_name = batch['imgname'][n]
                 img_idx = img_name.split('/')[-1]
+                save_path = os.path.join(save_dir, f'{img_idx}.png')
+                if os.path.exists(save_path):
+                    continue
 
                 # Save image processed by func 'get_example()'
                 # img = batch['img'][n].clone().detach().cpu().numpy()
@@ -162,7 +165,6 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
                 img_size = batch['img_size_orig'][n].cpu().numpy()
 
                 mask = render_mask(renderer, scaled_focal_length, verts, cam_t, img_size, is_right)
-                save_path = os.path.join(save_dir, f'{img_idx}.png')
                 cv2.imwrite(save_path, mask)
 
                 # Save the mask on the image image

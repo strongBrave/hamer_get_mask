@@ -130,14 +130,17 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
             pred_cam_t_full, scaled_focal_length = preprocess(batch, out, model_cfg)
             for n in range(batch_size):
                 img_name = batch['imgname'][n]
-                img_idx = img_name.split('/')[-1]       
+                img_idx = img_name.split('/')[-1] 
+                save_path = os.path.join(save_dir, f'{img_idx}.obj')
+                if os.path.exists(save_path):
+                    continue                      
 
                 # Save mask
                 verts = out['pred_vertices'][n].detach().cpu().numpy()
                 is_right = batch['right'][n].cpu().numpy()
                 hand_mesh = renderer.vertices_to_trimesh(verts, CAMERA_TRANSLATION, LIGHT_BLUE, is_right=is_right) # pyrender
                 
-                hand_mesh.export(os.path.join(save_dir, f'{img_idx}.obj'))
+                hand_mesh.export(save_path)
                
 
 
