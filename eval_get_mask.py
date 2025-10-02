@@ -117,7 +117,7 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
 
     # Create dataset and data loader
     dataset = create_webdataset(model_cfg, dataset_cfg, train=False)
-    dataloader = torch.utils.data.DataLoader(dataset, args.batch_size, shuffle=args.shuffle, num_workers=args.num_workers)
+    dataloader = torch.utils.data.DataLoader(dataset, args.batch_size, shuffle=args.shuffle, num_workers=args.num_workers, drop_last=False)
 
     # Go over the images in the dataset.
     for i, batch in enumerate(tqdm(dataloader)):
