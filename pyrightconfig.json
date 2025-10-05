@@ -1,5 +1,5 @@
 {
   "include": ["hamer", "third_party"],
-  "exclude": ["example_data", "hamer_training_data", "hamer_proprocess_data", "assets", "docker", "_DATA"],
+  "exclude": ["example_data", "hamer_training_data", "hamer_preprocess_data", "assets", "docker", "_DATA"],
   "typeCheckingMode": "off",
 }

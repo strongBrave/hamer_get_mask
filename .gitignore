@@ -154,4 +154,4 @@ dmypy.json
 *.zip
 _DATA/
 hamer_training_data/
-hamer_proprocess_data/
+hamer_preprocess_data/
