@@ -106,7 +106,7 @@ def main():
     for dataset in args.dataset.split(','):
         dataset_cfg = dataset_eval_to_get_mask_config()[dataset]
         args.dataset = dataset
-        save_dir = "hamer_proprocess_data"
+        save_dir = "hamer_preprocess_data"
         os.makedirs(save_dir, exist_ok=True)
         save_dir = os.path.join(save_dir, f"{dataset}")
         os.makedirs(save_dir, exist_ok=True)
@@ -127,7 +127,6 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
             out = model(batch)
 
             batch_size = batch['img'].shape[0]
-            pred_cam_t_full, scaled_focal_length = preprocess(batch, out, model_cfg)
             for n in range(batch_size):
                 img_name = batch['imgname'][n]
                 img_idx = img_name.split('/')[-1] 
