@@ -33,6 +33,7 @@ from hamer.utils.renderer import Renderer, cam_crop_to_full
 LIGHT_BLUE=(0.65098039,  0.74117647,  0.85882353)
 DEFAULT_MEAN = np.array([0.485, 0.456, 0.406])
 DEFAULT_STD = np.array([0.229, 0.224, 0.225])
+CAMERA_TRANSLATION = np.array([0, 0, 0])
 
 def preprocess(batch, out, model_cfg):
     B = batch['img'].shape[0]
@@ -82,7 +83,7 @@ def main():
     parser.add_argument('--dataset', type=str, default='FREIHAND-TRAIN,INTERHAND26M-TRAIN,HALPE-TRAIN,COCOW-TRAIN,MTC-TRAIN,RHD-TRAIN,MPIINZSL-TRAIN,HO3D-TRAIN,H2O3D-TRAIN,DEX-TRAIN', help='Dataset to evaluate')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for inference')
     parser.add_argument('--num_samples', type=int, default=1, help='Number of test samples to draw')
-    parser.add_argument('--num_workers', type=int, default=8, help='Number of workers used for data loading')
+    parser.add_argument('--num_workers', type=int, default=2, help='Number of workers used for data loading')
     parser.add_argument('--log_freq', type=int, default=10, help='How often to log results')
     parser.add_argument('--shuffle', dest='shuffle', action='store_true', default=False, help='Shuffle the dataset during evaluation')
     parser.add_argument('--exp_name', type=str, default=None, help='Experiment name')
@@ -109,15 +110,22 @@ def main():
         os.makedirs(save_dir, exist_ok=True)
         save_dir = os.path.join(save_dir, f"{dataset}")
         os.makedirs(save_dir, exist_ok=True)        
-        save_dir = os.path.join(save_dir, "mask")
-        os.makedirs(save_dir, exist_ok=True)
-        run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir)
 
-def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
+        save_mask_dir = os.path.join(save_dir, "mask")
+        os.makedirs(save_mask_dir, exist_ok=True)
+
+        save_mesh_dir = os.path.join(save_dir, "mesh")
+        os.makedirs(save_mesh_dir, exist_ok=True)        
+
+        run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_dir, save_mesh_dir)
+
+def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_dir, save_mesh_dir):
 
     # Create dataset and data loader
     dataset = create_webdataset(model_cfg, dataset_cfg, train=False)
     dataloader = torch.utils.data.DataLoader(dataset, args.batch_size, shuffle=args.shuffle, num_workers=args.num_workers, drop_last=False)
+
+    size = 0
 
     # Go over the images in the dataset.
     for i, batch in enumerate(tqdm(dataloader)):
@@ -127,13 +135,35 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
 
             batch_size = batch['img'].shape[0]
             pred_cam_t_full, scaled_focal_length = preprocess(batch, out, model_cfg)
+            size += batch_size
             for n in range(batch_size):
                 img_name = batch['imgname'][n]
                 img_idx = img_name.split('/')[-1]
-                save_path = os.path.join(save_dir, f'{img_idx}.png')
-                if os.path.exists(save_path):
+                save_mask_path = os.path.join(save_mask_dir, f'{img_idx}.png')
+                save_mesh_path = os.path.join(save_mesh_dir, f'{img_idx}.obj')
+                if os.path.exists(save_mask_path) and os.path.exists(save_mesh_path):
                     continue
 
+                if not os.path.exists(save_mask_path):
+                    # Save mask
+                    verts = out['pred_vertices'][n].detach().cpu().numpy()
+                    is_right = batch['right'][n].cpu().numpy()
+                    verts[:,0] = (2*is_right-1)*verts[:,0]
+                    cam_t = pred_cam_t_full[n]
+                    img_size = batch['img_size_orig'][n].cpu().numpy()
+
+                    mask = render_mask(renderer, scaled_focal_length, verts, cam_t, img_size, is_right)
+                    cv2.imwrite(save_mask_path, mask)          
+
+                if not os.path.exists(save_mesh_path):
+                    # Save mesh
+                    verts = out['pred_vertices'][n].detach().cpu().numpy()
+                    is_right = batch['right'][n].cpu().numpy()
+                    hand_mesh = renderer.vertices_to_trimesh(verts, CAMERA_TRANSLATION, LIGHT_BLUE, is_right=is_right) # pyrender
+                    
+                    hand_mesh.export(save_mesh_path)                     
+
+    print(f"Processed {size} images.")
                 # Save image processed by func 'get_example()'
                 # img = batch['img'][n].clone().detach().cpu().numpy()
                 # img = tensor_to_image(img)
@@ -156,16 +186,6 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_dir):
                 #                         scene_bg_color=(1, 1, 1),
                 #                         )
                 # cv2.imwrite(tmp_save_path, 255*regression_img[:, :, ::-1])                
-
-                # Save mask
-                verts = out['pred_vertices'][n].detach().cpu().numpy()
-                is_right = batch['right'][n].cpu().numpy()
-                verts[:,0] = (2*is_right-1)*verts[:,0]
-                cam_t = pred_cam_t_full[n]
-                img_size = batch['img_size_orig'][n].cpu().numpy()
-
-                mask = render_mask(renderer, scaled_focal_length, verts, cam_t, img_size, is_right)
-                cv2.imwrite(save_path, mask)
 
                 # Save the mask on the image image
                 # mask_3_channel = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
