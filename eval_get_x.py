@@ -138,9 +138,10 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_di
             size += batch_size
             for n in range(batch_size):
                 img_name = batch['imgname'][n]
-                img_idx = img_name.split('/')[-1]
-                save_mask_path = os.path.join(save_mask_dir, f'{img_idx}.png')
-                save_mesh_path = os.path.join(save_mesh_dir, f'{img_idx}.obj')
+                img_name_components = img_name.split('/')
+                img_file_name = '_'.join(img_name_components)
+                save_mask_path = os.path.join(save_mask_dir, f'{img_file_name}.png')
+                save_mesh_path = os.path.join(save_mesh_dir, f'{img_file_name}.obj')
                 if os.path.exists(save_mask_path) and os.path.exists(save_mesh_path):
                     continue
 
