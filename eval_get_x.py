@@ -87,6 +87,7 @@ def main():
     parser.add_argument('--log_freq', type=int, default=10, help='How often to log results')
     parser.add_argument('--shuffle', dest='shuffle', action='store_true', default=False, help='Shuffle the dataset during evaluation')
     parser.add_argument('--exp_name', type=str, default=None, help='Experiment name')
+    parser.add_argument('--save_masked_img', action='store_true', default=False, help='save the masked hand image')
 
     args = parser.parse_args()
     # Download and load checkpoints
@@ -114,12 +115,18 @@ def main():
         save_mask_dir = os.path.join(save_dir, "mask")
         os.makedirs(save_mask_dir, exist_ok=True)
 
+        save_masked_img_dir = os.path.join(save_dir, "masked_img")
+        os.makedirs(save_masked_img_dir, exist_ok=True)
+
         save_mesh_dir = os.path.join(save_dir, "mesh")
         os.makedirs(save_mesh_dir, exist_ok=True)        
 
-        run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_dir, save_mesh_dir)
+        if args.save_masked_img:
+            run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_dir, save_mesh_dir, save_masked_img_dir, True)
+        else:
+            run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_dir, save_mesh_dir, save_masked_img_dir)
 
-def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_dir, save_mesh_dir):
+def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_dir, save_mesh_dir, save_masked_img_dir, is_save_masked_img=False):
 
     # Create dataset and data loader
     dataset = create_webdataset(model_cfg, dataset_cfg, train=False)
@@ -142,7 +149,9 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_di
                 img_file_name = '_'.join(img_name_components)
                 save_mask_path = os.path.join(save_mask_dir, f'{img_file_name}.png')
                 save_mesh_path = os.path.join(save_mesh_dir, f'{img_file_name}.obj')
-                if os.path.exists(save_mask_path) and os.path.exists(save_mesh_path):
+                save_masked_img_path = os.path.join(save_masked_img_dir, f'{img_file_name}.png')
+                   
+                if os.path.exists(save_mask_path) and os.path.exists(save_mesh_path) and (is_save_masked_img and os.path.exists(save_masked_img_path)):
                     continue
 
                 if not os.path.exists(save_mask_path):
@@ -154,15 +163,23 @@ def run_eval(model, model_cfg, dataset_cfg, device, args, renderer, save_mask_di
                     img_size = batch['img_size_orig'][n].cpu().numpy()
 
                     mask = render_mask(renderer, scaled_focal_length, verts, cam_t, img_size, is_right)
-                    cv2.imwrite(save_mask_path, mask)          
+                    cv2.imwrite(save_mask_path, mask)   
 
-                if not os.path.exists(save_mesh_path):
-                    # Save mesh
-                    verts = out['pred_vertices'][n].detach().cpu().numpy()
-                    is_right = batch['right'][n].cpu().numpy()
-                    hand_mesh = renderer.vertices_to_trimesh(verts, CAMERA_TRANSLATION, LIGHT_BLUE, is_right=is_right) # pyrender
+                if is_save_masked_img and not os.path.exists(save_masked_img_path): 
+                    mask = cv2.imread(save_mask_path, cv2.IMREAD_GRAYSCALE)
+                    img_orig = batch['image_orig'][n]
+                    img_orig = img_orig.cpu().numpy().astype(np.uint8)
+
+                    masked_img = img_orig * (mask[:, :, None] / 255)
+                    cv2.imwrite(save_masked_img_path, masked_img[:, :, ::-1])
+
+                # if not os.path.exists(save_mesh_path):
+                #     # Save mesh
+                #     verts = out['pred_vertices'][n].detach().cpu().numpy()
+                #     is_right = batch['right'][n].cpu().numpy()
+                #     hand_mesh = renderer.vertices_to_trimesh(verts, CAMERA_TRANSLATION, LIGHT_BLUE, is_right=is_right) # pyrender
                     
-                    hand_mesh.export(save_mesh_path)                     
+                #     hand_mesh.export(save_mesh_path)                     
 
     print(f"Processed {size} images.")
                 # Save image processed by func 'get_example()'
